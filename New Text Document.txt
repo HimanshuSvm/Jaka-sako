@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Self Growth Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+body,html{height:100%;background:#111;color:white;overflow-x:hidden;}
+/* ----------------- NEON WAVES BACKGROUND ----------------- */
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(270deg,#0ff,#f0f,#ff0,#0ff);background-size:600% 600%;animation:neonWave 20s ease infinite;z-index:-2;}
+@keyframes neonWave{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:-1;}
+/* ----------------- HEADER ----------------- */
+header{display:flex;justify-content:space-between;align-items:center;padding:20px 30px;}
+header h1{font-size:28px;}
+#timezoneSelect{padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.05);color:white;border:1px solid rgba(255,255,255,0.2);}
+
+/* ----------------- CREATE ROUTINE ----------------- */
+.routine-header{display:flex;justify-content:space-between;align-items:center;margin:20px 30px;}
+.glass-button{padding:10px 22px;border-radius:14px;border:1px solid rgba(255,255,255,0.25);background:linear-gradient(135deg,rgba(0,255,200,0.2),rgba(0,150,255,0.25));color:white;font-size:16px;font-weight:600;cursor:pointer;backdrop-filter:blur(12px);transition:0.25s ease;box-shadow:0 5px 18px rgba(0,200,255,0.3);}
+.glass-button:hover{transform:translateY(-2px);background:linear-gradient(135deg,rgba(0,255,200,0.35),rgba(0,150,255,0.4));box-shadow:0 6px 20px rgba(0,200,255,0.45);}
+.glass-button:active{transform:scale(0.97);}
+
+/* ----------------- ROUTINE CARDS ----------------- */
+.routine-list{margin:0 30px 50px 30px;display:flex;flex-direction:column;gap:18px;}
+.routine-card{background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);border-radius:14px;border:1px solid rgba(255,255,255,0.15);padding:18px 22px;box-shadow:0 6px 18px rgba(0,0,0,0.25);transition:0.3s ease;}
+.routine-card:hover{transform:translateY(-2px);}
+.routine-card h3{margin-bottom:6px;}
+
+/* ----------------- TASKS ----------------- */
+.task-list{list-style:none;margin-top:10px;}
+.task-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.subtasks{margin-left:25px;margin-top:4px;display:none;list-style:disc;}
+.subtask-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;}
+.expand-btn{cursor:pointer;font-weight:600;color:#0ff;user-select:none;}
+.time-input{padding:2px 6px;border-radius:6px;border:none;background:rgba(255,255,255,0.15);color:white;font-size:12px;}
+
+/* ----------------- MODAL ----------------- */
+#createRoutineModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);justify-content:center;align-items:center;z-index:10;}
+.modal-content{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);padding:30px 40px;border-radius:18px;width:90%;max-width:450px;display:flex;flex-direction:column;gap:15px;}
+.modal-content input,.modal-content textarea{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:white;}
+.modal-content button{align-self:flex-end;}
+
+/* ----------------- CONFETTI ----------------- */
+.confetti{position:fixed;width:10px;height:10px;background:#0ff;z-index:999;pointer-events:none;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+
+/* ----------------- ANALYTICS & STREAK ----------------- */
+.analytics-bar{margin:20px 30px;padding:12px 18px;border-radius:14px;background:rgba(255,255,255,0.05);backdrop-filter:blur(16px);display:flex;gap:20px;align-items:center;}
+.analytics-bar div{font-size:14px;cursor:pointer;position:relative;}
+.analytics-dropdown{position:absolute;top:25px;left:0;background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:8px;display:none;flex-direction:column;gap:4px;}
+.analytics-dropdown div{cursor:pointer;font-size:12px;color:#0ff;}
+.streak-chart{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.streak-day{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid rgba(255,255,255,0.25);}
+.streak-day.completed{background:#0ff;color:#111;}
+.streak-day.milestone{box-shadow:0 0 6px 2px #ff0;}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Self Growth Tracker</h1>
+    <select id="timezoneSelect"></select>
+</header>
+
+<div class="routine-header">
+    <h2>Your Routines</h2>
+    <button id="createRoutineBtn" class="glass-button">+ Create Routine</button>
+</div>
+
+<div class="analytics-bar">
+    <div id="successRate">Success Rate: 0%
+        <div class="analytics-dropdown">
+            <div data-period="daily">Daily</div>
+            <div data-period="weekly">Weekly</div>
+            <div data-period="monthly">Monthly</div>
+        </div>
+    </div>
+    <div id="streakCount">Streak
+        <div class="streak-chart"></div>
+    </div>
+</div>
+
+<div class="routine-list" id="routineList"></div>
+
+<!-- CREATE ROUTINE MODAL -->
+<div id="createRoutineModal">
+    <div class="modal-content">
+        <h3>Create New Routine</h3>
+        <input type="text" id="routineTitle" placeholder="Routine title">
+        <textarea id="routineDesc" placeholder="Description (optional)"></textarea>
+        <button id="saveRoutineBtn" class="glass-button">Save</button>
+    </div>
+</div>
+
+<script>
+// ----------------- TIMEZONE -----------------
+const timezoneSelect = document.getElementById('timezoneSelect');
+const timezones = Intl.supportedValuesOf('timeZone');
+timezones.forEach(tz => { const opt=document.createElement('option'); opt.value=tz; opt.textContent=tz; timezoneSelect.appendChild(opt);});
+let userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+timezoneSelect.value = userTimezone;
+timezoneSelect.addEventListener('change',()=>userTimezone=timezoneSelect.value);
+
+// ----------------- ROUTINE LOGIC -----------------
+const routineList = document.getElementById('routineList');
+const createRoutineBtn = document.getElementById('createRoutineBtn');
+const createRoutineModal = document.getElementById('createRoutineModal');
+const saveRoutineBtn = document.getElementById('saveRoutineBtn');
+const routineTitle = document.getElementById('routineTitle');
+const routineDesc = document.getElementById('routineDesc');
+
+let allTasks = [];
+let taskHistory = []; // {date: 'YYYY-MM-DD', completed:true}
+let completionHistory = {}; // for analytics
+
+// Create Routine Modal
+createRoutineBtn.addEventListener('click', ()=>{routineTitle.value='';routineDesc.value='';createRoutineModal.style.display='flex';});
+saveRoutineBtn.addEventListener('click', ()=>{
+    if(routineTitle.value.trim()===''){ alert('Title required'); return; }
+    const card=document.createElement('div'); card.className='routine-card';
+    const title=document.createElement('h3'); title.textContent=routineTitle.value;
+    card.appendChild(title);
+    const desc=document.createElement('p'); desc.textContent=routineDesc.value; card.appendChild(desc);
+    
+    const taskList=document.createElement('ul'); taskList.className='task-list';
+    card.appendChild(taskList);
+
+    const addTaskBtn=document.createElement('button'); addTaskBtn.className='glass-button'; addTaskBtn.textContent='+ Add Task';
+    card.appendChild(addTaskBtn);
+
+    addTaskBtn.addEventListener('click', ()=>{
+        const taskItem=document.createElement('li'); taskItem.className='task-item';
+        const taskInput=document.createElement('input'); taskInput.type='text'; taskInput.placeholder='Task title';
+        const taskCheckbox=document.createElement('input'); taskCheckbox.type='checkbox';
+        const timeInput=document.createElement('input'); timeInput.type='time'; timeInput.className='time-input';
+        const expandBtn=document.createElement('span'); expandBtn.className='expand-btn'; expandBtn.textContent='[+]';
+        const subtaskList=document.createElement('ul'); subtaskList.className='subtasks';
+        const addSubtaskBtn=document.createElement('button'); addSubtaskBtn.className='glass-button'; addSubtaskBtn.textContent='+ Add Subtask';
+
+        expandBtn.addEventListener('click', ()=>subtaskList.style.display=subtaskList.style.display==='none'?'block':'none');
+        addSubtaskBtn.addEventListener('click', ()=>{
+            const subItem=document.createElement('li'); subItem.className='subtask-item';
+            const subInput=document.createElement('input'); subInput.type='text'; subInput.placeholder='Subtask title';
+            const subCheckbox=document.createElement('input'); subCheckbox.type='checkbox';
+            const subTime=document.createElement('input'); subTime.type='time'; subTime.className='time-input';
+            subItem.append(subCheckbox,subInput,subTime); subtaskList.appendChild(subItem);
+            allTasks.push({checkbox:subCheckbox,timeInput:subTime});
+            subCheckbox.addEventListener('change',()=>{updateAnalytics(subCheckbox);});
+        });
+
+        taskItem.append(taskCheckbox,taskInput,timeInput,expandBtn);
+        taskList.append(taskItem); taskList.append(subtaskList,addSubtaskBtn);
+        allTasks.push({checkbox:taskCheckbox,timeInput:timeInput});
+        taskCheckbox.addEventListener('change',()=>{updateAnalytics(taskCheckbox);});
+    });
+
+    routineList.appendChild(card);
+    createRoutineModal.style.display='none';
+});
+
+// ----------------- ANALYTICS & STREAK -----------------
+const successRateElem=document.getElementById('successRate');
+const dropdown=successRateElem.querySelector('.analytics-dropdown');
+const streakElem=document.getElementById('streakCount');
+const streakChart=streakElem.querySelector('.streak-chart');
+
+successRateElem.addEventListener('click',()=>{dropdown.style.display=dropdown.style.display==='flex'?'none':'flex';});
+dropdown.querySelectorAll('div').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+        updateAnalytics(opt.dataset.period);
+        dropdown.style.display='none';
+    });
+});
+
+function updateAnalytics(period='daily'){
+    const now=new Date();
+    const todayStr=now.toLocaleDateString();
+    let done=0,total=0;
+    allTasks.forEach(t=>{total++; if(t.checkbox.checked) done++;});
+    let rate=total===0?0:Math.round((done/total)*100);
+    successRateElem.firstChild.textContent=`Success Rate: ${rate}%`;
+
+    // Streak history tracking
+    if(total>0 && done===total && !taskHistory.find(h=>h.date===todayStr)){
+        taskHistory.push({date:todayStr,completed:true});
+    }
+    renderStreakChart();
+}
+
+// ----------------- STREAK CHART -----------------
+function renderStreakChart(){
+    streakChart.innerHTML='';
+    const daysToShow=30;
+    const today=new Date();
+    for(let i=daysToShow-1;i>=0;i--){
+        const d=new Date(today); d.setDate(today.getDate()-i);
+        const dStr=d.toLocaleDateString();
+        const completed=taskHistory.find(h=>h.date===dStr)?.completed;
+        const dayDiv=document.createElement('div'); dayDiv.className='streak-day';
+        if(completed) dayDiv.classList.add('completed');
+        if((daysToShow-i)%10===0) dayDiv.classList.add('milestone');
+        dayDiv.textContent=(daysToShow-i);
+        streakChart.appendChild(dayDiv);
+    }
+}
+
+// ----------------- CONFETTI -----------------
+function celebrate(message){
+    for(let i=0;i<50;i++){
+        const conf=document.createElement('div'); conf.className='confetti';
+        conf.style.left=Math.random()*100+'vw'; conf.style.background=`hsl(${Math.random()*360},100%,60%)`;
+        conf.style.animationDuration=2+Math.random()*2+'s'; document.body.appendChild(conf);
+        setTimeout(()=>conf.remove(),4000);
+    }
+    alert(message);
+}
+
+// ----------------- NOTIFICATIONS -----------------
+if("Notification" in window) Notification.requestPermission();
+setInterval(()=>{
+    const now=new Date();
+    allTasks.forEach(task=>{
+        if(task.timeInput.value){
+            const [h,m]=task.timeInput.value.split(':').map(Number);
+            const taskTime=new Date(now.toLocaleString("en-US",{timeZone:userTimezone}));
+            taskTime.setHours(h); taskTime.setMinutes(m); taskTime.setSeconds(0);
+            if(Math.abs(now-taskTime)<1000*60){ // within 1 min
+                if(Notification.permission==="granted") new Notification("Task Reminder","Time for: "+(task.checkbox.parentElement.querySelector('input[type=text]')?.value||"Task"));
+            }
+        }
+    });
+},30000);
+</script>
+</body>
+</html>

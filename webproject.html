@@ -1,0 +1,1250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>Ascend — Draft 5 (Full)</title>
+<style>
+/* ---------- THEME & LAYOUT (mobile-first) ---------- */
+:root{
+  --bg1:#071026; --bg2:#0b1630;
+  --accent1:#6a11cb; --accent2:#2575fc;
+  --glass: rgba(255,255,255,0.04);
+  --text:#e6eef8;
+  --muted: rgba(230,238,248,0.72);
+  --card-radius:14px;
+  --nav-h:74px;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(150deg,var(--bg1),var(--bg2));color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;-webkit-font-smoothing:antialiased}
+.app{max-width:980px;margin:0 auto;padding:14px;padding-bottom:calc(var(--nav-h)+32px)}
+
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.brand{font-weight:800;font-size:20px;background:linear-gradient(90deg,var(--accent1),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hint{font-size:12px;color:var(--muted)}
+
+/* cards */
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter:blur(8px);border-radius:var(--card-radius);padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.04)}
+.header-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+/* widgets */
+.widgets{display:flex;gap:8px;margin-bottom:12px}
+.widget{flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,0.03);text-align:center;transition:transform .24s}
+.widget .num{font-weight:800;font-size:18px}
+
+/* routines */
+.routine-card{padding:10px;border-radius:12px;background:rgba(255,255,255,0.02);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.routine-title{font-weight:700}
+
+/* tasks */
+.task-item,.subtask-item{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;background:rgba(255,255,255,0.01);margin-top:8px}
+.input{padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);color:var(--text);width:100%}
+.time-input{padding:8px;border-radius:8px;border:none;background:rgba(255,255,255,0.03);color:var(--text);width:120px}
+
+/* buttons */
+.btn{padding:8px 10px;border-radius:10px;border:none;background:var(--glass);color:var(--text);font-weight:600}
+.btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;box-shadow:0 10px 30px rgba(37,117,252,0.12)}
+.fab{position:fixed;right:18px;bottom:calc(var(--nav-h)+28px);width:56px;height:56px;border-radius:28px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,var(--accent1),var(--accent2));box-shadow:0 12px 30px rgba(0,0,0,0.45);border:none;color:white;font-size:24px;z-index:1200}
+
+/* bottom nav */
+.bottom-nav{position:fixed;left:10px;right:10px;bottom:10px;height:var(--nav-h);border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:space-around;padding:8px 18px;box-shadow:0 20px 40px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.04);z-index:999}
+.nav-item{display:flex;flex-direction:column;align-items:center;color:rgba(230,238,248,0.8);font-size:11px;cursor:pointer}
+.nav-item.active{color:white}
+
+/* profile & leaderboard panels */
+.panel{position:fixed;right:14px;bottom:calc(var(--nav-h)+86px);width:260px;background:rgba(0,0,0,0.32);backdrop-filter:blur(10px);padding:12px;border-radius:12px}
+.lb{position:fixed;left:14px;bottom:calc(var(--nav-h)+86px);width:260px;background:rgba(0,0,0,0.32);backdrop-filter:blur(10px);padding:12px;border-radius:12px;max-height:440px;overflow:auto}
+.avatar{width:64px;height:64px;border-radius:12px;object-fit:cover;border:2px solid rgba(255,255,255,0.06)}
+
+/* modal */
+.modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:1200;visibility:hidden;opacity:0;transition:.18s}
+.modal.show{visibility:visible;opacity:1}
+.modal-card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:14px;border-radius:12px;width:92%;max-width:520px}
+
+/* heatmap */
+.heatmap{display:grid;grid-template-columns:repeat(30, 1fr);gap:3px;padding:6px;background:rgba(255,255,255,0.02);border-radius:10px}
+.heatcell{padding-top:100%;position:relative;border-radius:3px;overflow:hidden}
+.heatinner{position:absolute;inset:0;border-radius:3px}
+
+/* confetti */
+.confetti{position:fixed;width:8px;height:8px;border-radius:2px;opacity:0;transform:translateY(-20px);animation:fall 1.2s linear forwards}
+@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(600px) rotate(360deg)}}
+
+/* fullscreen focus overlay */
+.focus-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity 0.3s,visibility 0.3s}
+.focus-overlay.active{opacity:1;visibility:visible}
+.focus-ring{width:280px;height:280px;border-radius:50%;background:conic-gradient(var(--accent1) 0deg, rgba(255,255,255,0.08) 0deg);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 60px rgba(106,17,203,0.4)}
+.focus-time{font-size:64px;font-weight:800;color:white}
+.focus-task-name{font-size:24px;font-weight:700;color:white;margin-bottom:20px;text-align:center;padding:0 20px}
+.focus-dnd{margin-top:30px;color:rgba(255,255,255,0.7);font-size:14px;display:flex;align-items:center;gap:8px}
+.focus-controls{margin-top:40px;display:flex;gap:12px}
+
+/* utilities */
+.hidden{display:none}
+.center{text-align:center}
+.small{font-size:12px;color:var(--muted)}
+@media(min-width:900px){ .app{padding:22px} .panel{right:40px} .lb{left:40px} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div>
+      <div class="brand">Ascend</div>
+      <div class="small">Level up your habits — Draft 5 (with Notifications)</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div id="welcomeDisplay" class="small">Not logged</div>
+      <button id="btnLogout" class="btn">Logout</button>
+    </div>
+  </div>
+
+  <!-- widgets -->
+  <div class="widgets">
+    <div class="widget card" id="wWidgetStreak"><div class="small">Streak</div><div class="num" id="wStreak">0</div></div>
+    <div class="widget card" id="wWidgetSuccess"><div class="small">Success</div><div class="num" id="wSuccess">0%</div></div>
+    <div class="widget card" id="wWidgetXP"><div class="small">XP</div><div class="num" id="wXP">0</div></div>
+  </div>
+
+  <!-- main content area -->
+  <div id="mainArea">
+    <!-- Home (routines list) -->
+    <div id="viewHome" class="card">
+      <div class="header-row">
+        <div>
+          <div style="font-weight:800">Your Routines</div>
+          <div class="small">Tap a routine to open</div>
+        </div>
+        <div>
+          <button id="btnNewRoutine" class="btn primary">+ Routine</button>
+        </div>
+      </div>
+      <div id="routinesList" style="margin-top:10px"></div>
+    </div>
+
+    <!-- Progress (charts & heatmap) -->
+    <div id="viewProgress" class="card hidden" style="margin-top:12px">
+      <div class="header-row"><div style="font-weight:800">Progress</div><div class="small">Heatmap • Productivity</div></div>
+      <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div class="card">
+            <div style="font-weight:700">Productivity Score</div>
+            <div id="prodScore" style="font-size:28px;font-weight:800;margin-top:6px">0</div>
+            <div class="small" id="prodRank">Rank: D</div>
+          </div>
+        </div>
+        <div style="flex:2;min-width:260px">
+          <div class="card">
+            <div style="font-weight:700">Habit Heatmap (last 30 days)</div>
+            <div id="heatmap" class="heatmap" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Focus tab -->
+    <div id="viewFocus" class="card hidden" style="margin-top:12px">
+      <div class="header-row"><div style="font-weight:800">Focus (Pomodoro)</div><div class="small">Earn XP for sessions</div></div>
+      <div style="margin-top:12px">
+        <div style="margin-bottom:12px">
+          <label class="small">Task Name</label>
+          <input id="focusTaskName" class="input" placeholder="Enter task name" style="margin-top:6px" />
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="small">Time Duration (minutes)</label>
+          <input id="focusDuration" class="input" type="number" value="25" min="1" max="180" placeholder="Set time duration" style="margin-top:6px" />
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button id="focusStartNew" class="btn primary" style="flex:1">Start Focus Session</button>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;margin-top:12px">
+          <div class="small" style="margin-bottom:8px">Today's Focus Stats</div>
+          <div id="todayFocus" style="font-weight:700">0 min</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- floating quick add -->
+  <button id="fab" class="fab" title="Quick add">＋</button>
+
+  <!-- profile panel -->
+  <div id="profilePanel" class="panel hidden">
+    <div style="display:flex;gap:10px;align-items:center">
+      <img id="pfAvatar" class="avatar" src="">
+      <div>
+        <div id="pfName" style="font-weight:800">—</div>
+        <div class="small" id="pfStreak">Streak: 0</div>
+        <div class="small" id="pfSuccess">Success: 0%</div>
+        <div class="small" id="pfBadges">Badges: -</div>
+      </div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="small">Avatar</label>
+      <select id="avatarSelect" style="width:100%;margin-top:6px"></select>
+    </div>
+    <div style="margin-top:8px;display:flex;gap:8px"><button id="btnExport" class="btn">Export</button><button id="btnReset" class="btn">Reset</button></div>
+  </div>
+
+  <!-- leaderboard -->
+  <div id="leaderboard" class="lb hidden">
+    <div style="font-weight:800;margin-bottom:8px">Leaderboard</div>
+    <div id="lbList"></div>
+  </div>
+
+  <!-- bottom nav -->
+  <div class="bottom-nav" role="navigation" aria-label="Main">
+    <div class="nav-item active" data-view="home" id="navHome"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l10 9h-3v9h-6v-6H11v6H5v-9H2z"/></svg><div>Home</div></div>
+    <div class="nav-item" data-view="routines" id="navRoutines"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 6h2v-2H3v2zM3 5h2V3H3v2zm4 8h14v-2H7v2zm0 6h14v-2H7v2zM7 3v2h14V3H7z"/></svg><div>Routines</div></div>
+    <div class="nav-item" data-view="focus" id="navFocus"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zM2 12a10 10 0 1020 0A10 10 0 002 12z"/></svg><div>Focus</div></div>
+    <div class="nav-item" data-view="progress" id="navProgress"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 3h4v18H5V3zm6 6h4v12h-4V9zm6-6h4v18h-4V3z"/></svg><div>Progress</div></div>
+    <div class="nav-item" data-view="profile" id="navProfile"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-9 2-9 6v2h18v-2c0-4-5-6-9-6z"/></svg><div>Profile</div></div>
+  </div>
+
+  <!-- modals -->
+  <div id="modalLogin" class="modal show" aria-modal="true">
+    <div class="modal-card">
+      <div style="font-weight:800;font-size:18px;margin-bottom:8px">Welcome to Ascend</div>
+      <input id="inputUser" class="input" placeholder="Username" />
+      <input id="inputPass" class="input" placeholder="Password" type="password" style="margin-top:8px" />
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="btnRegister" class="btn">Register</button>
+        <button id="btnLogin" class="btn primary">Login</button>
+      </div>
+      <div class="small" style="margin-top:8px">Data is stored locally in your browser (localStorage).</div>
+    </div>
+  </div>
+
+  <div id="modalCreateRoutine" class="modal">
+    <div class="modal-card">
+      <div style="font-weight:800">Create Routine</div>
+      <input id="inputRoutineName" class="input" placeholder="Routine name" style="margin-top:8px" />
+      <textarea id="inputRoutineDesc" class="input" placeholder="Description (optional)" style="margin-top:8px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button id="btnSaveRoutine" class="btn primary">Save</button><button id="btnCancelRoutine" class="btn">Cancel</button></div>
+    </div>
+  </div>
+
+  <div id="modalBadge" class="modal">
+    <div class="modal-card center">
+      <div id="badgeText" style="font-weight:800;margin-bottom:8px"></div>
+      <div id="badgeEmoji" style="font-size:48px;margin-bottom:12px"></div>
+      <button id="btnCloseBadge" class="btn primary">Close</button>
+    </div>
+  </div>
+
+  <!-- hidden elements for goals, suggested lists -->
+  <div id="suggestedList" class="hidden"></div>
+  <div id="goalList" class="hidden"></div>
+
+  <!-- Fullscreen focus overlay -->
+  <div id="focusOverlay" class="focus-overlay">
+    <div class="focus-task-name" id="overlayTaskName">Task Name</div>
+    <div class="focus-ring" id="overlayRing">
+      <div class="focus-time" id="overlayTime">25:00</div>
+    </div>
+    <div class="focus-dnd">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5-9h10v2H7z"/></svg>
+      <span>Enable DND mode for maximum focus</span>
+    </div>
+    <div class="focus-controls">
+      <button id="overlayPause" class="btn">Pause</button>
+      <button id="overlayStop" class="btn">End Session</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- Ascend Draft 5 (Single-file with Notifications) ---------- */
+/* All major features from previous drafts consolidated and fixed:
+   - Working register/login (localStorage)
+   - Per-user data persistence (routines, tasks, subtasks, history, xp, badges)
+   - Add tasks & subtasks working
+   - Per-task time input
+   - Focus timer (Pomodoro)
+   - Habit heatmap (30 days)
+   - Productivity score
+   - Quests (sample)
+   - Avatars (inline SVG data URIs)
+   - Badges (Bronze/Silver/Gold awarded)
+   - Export / Reset
+   - Confetti and level-up sound
+   - Task time notifications (NEW)
+*/
+
+// ---------- Storage & state ----------
+const LS_KEY = 'ascend_draft5_users';
+let users = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+let currentUser = null; // username
+let settings = {
+  pomodoro: 25
+};
+
+// Save utility
+function saveAll(){ localStorage.setItem(LS_KEY, JSON.stringify(users)); }
+
+// Ensure user record
+function ensureUserRecord(u){
+  if(!users[u]) {
+    users[u] = {
+      password: '',
+      routines: [],
+      goals: [],
+      history: [], // YYYY-MM-DD strings for full-day completions
+      xp: 0,
+      badges: [], // Bronze, Silver, Gold
+      avatar: 0,
+      firstLogin: true,
+      focusHistory: [], // {date:YYYY-MM-DD, minutes: N}
+      quests: []
+    };
+    saveAll();
+  }
+}
+
+// ---------- UI refs ----------
+const modalLogin = document.getElementById('modalLogin');
+const inputUser = document.getElementById('inputUser');
+const inputPass = document.getElementById('inputPass');
+const btnRegister = document.getElementById('btnRegister');
+const btnLogin = document.getElementById('btnLogin');
+const welcomeDisplay = document.getElementById('welcomeDisplay');
+const btnLogout = document.getElementById('btnLogout');
+
+const wStreak = document.getElementById('wStreak');
+const wSuccess = document.getElementById('wSuccess');
+const wXP = document.getElementById('wXP');
+
+const routinesList = document.getElementById('routinesList');
+const btnNewRoutine = document.getElementById('btnNewRoutine');
+const modalCreateRoutine = document.getElementById('modalCreateRoutine');
+const inputRoutineName = document.getElementById('inputRoutineName');
+const inputRoutineDesc = document.getElementById('inputRoutineDesc');
+const btnSaveRoutine = document.getElementById('btnSaveRoutine');
+const btnCancelRoutine = document.getElementById('btnCancelRoutine');
+
+const fab = document.getElementById('fab');
+
+const profilePanel = document.getElementById('profilePanel');
+const pfAvatar = document.getElementById('pfAvatar');
+const pfName = document.getElementById('pfName');
+const pfStreak = document.getElementById('pfStreak');
+const pfSuccess = document.getElementById('pfSuccess');
+const pfBadges = document.getElementById('pfBadges');
+const avatarSelect = document.getElementById('avatarSelect');
+const btnExport = document.getElementById('btnExport');
+const btnReset = document.getElementById('btnReset');
+
+const lb = document.getElementById('leaderboard');
+const lbList = document.getElementById('lbList');
+
+const navItems = document.querySelectorAll('.nav-item');
+
+const modalBadge = document.getElementById('modalBadge');
+const badgeText = document.getElementById('badgeText');
+const badgeEmoji = document.getElementById('badgeEmoji');
+const btnCloseBadge = document.getElementById('btnCloseBadge');
+
+const viewHome = document.getElementById('viewHome');
+const viewFocus = document.getElementById('viewFocus');
+const viewProgress = document.getElementById('viewProgress');
+
+const focusLabel = document.getElementById('focusLabel');
+const focusCircle = document.getElementById('focusCircle');
+const focusStart = document.getElementById('focusStart');
+const focusPause = document.getElementById('focusPause');
+const focusStop = document.getElementById('focusStop');
+const focusMinutes = document.getElementById('focusMinutes');
+const saveFocusLen = document.getElementById('saveFocusLen');
+const todayFocusEl = document.getElementById('todayFocus');
+
+const focusTaskNameInput = document.getElementById('focusTaskName');
+const focusDurationInput = document.getElementById('focusDuration');
+const focusStartNew = document.getElementById('focusStartNew');
+const focusOverlay = document.getElementById('focusOverlay');
+const overlayTaskName = document.getElementById('overlayTaskName');
+const overlayTime = document.getElementById('overlayTime');
+const overlayRing = document.getElementById('overlayRing');
+const overlayPause = document.getElementById('overlayPause');
+const overlayStop = document.getElementById('overlayStop');
+
+const heatmapEl = document.getElementById('heatmap');
+const prodScoreEl = document.getElementById('prodScore');
+const prodRankEl = document.getElementById('prodRank');
+
+// ---------- Inline avatars (SVG data URIs) ----------
+const avatarData = [
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect rx="24" width="200" height="200" fill="%236a11cb"/><text x="50%" y="55%" font-size="72" text-anchor="middle" fill="white">🐺</text></svg>',
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect rx="24" width="200" height="200" fill="%232574fc"/><text x="50%" y="55%" font-size="72" text-anchor="middle" fill="white">🎮</text></svg>',
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect rx="24" width="200" height="200" fill="%23ff6b6b"/><text x="50%" y="55%" font-size="72" text-anchor="middle" fill="white">🥷</text></svg>',
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect rx="24" width="200" height="200" fill="%2300b894"/><text x="50%" y="55%" font-size="72" text-anchor="middle" fill="white">🏋️</text></svg>',
+  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect rx="24" width="200" height="200" fill="%23eccc68"/><text x="50%" y="55%" font-size="72" text-anchor="middle" fill="white">🏃</text></svg>'
+];
+
+// populate avatar select
+avatarData.forEach((a, i) => {
+  const opt = document.createElement('option'); opt.value = i; opt.textContent = 'Avatar ' + (i+1); avatarSelect.appendChild(opt);
+});
+
+// ---------- NOTIFICATION SYSTEM ----------
+let notificationPermission = false;
+let notificationCheckInterval = null;
+
+// Request notification permission
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) {
+    console.log('This browser does not support notifications');
+    return false;
+  }
+  
+  if (Notification.permission === 'granted') {
+    notificationPermission = true;
+    return true;
+  }
+  
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    notificationPermission = (permission === 'granted');
+    return notificationPermission;
+  }
+  
+  return false;
+}
+
+// Show a notification
+function showNotification(title, body, routineIdx, taskIdx) {
+  if (!notificationPermission) return;
+  
+  const notification = new Notification(title, {
+    body: body,
+    icon: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%236a11cb" rx="8"/><text x="50%" y="55%" font-size="32" text-anchor="middle" fill="white">🎯</text></svg>',
+    badge: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="%236a11cb" rx="8"/></svg>',
+    tag: `task-${routineIdx}-${taskIdx}`,
+    requireInteraction: false,
+    silent: false
+  });
+  
+  notification.onclick = function() {
+    window.focus();
+    openRoutineView(routineIdx);
+    notification.close();
+  };
+  
+  // Auto-close after 10 seconds
+  setTimeout(() => notification.close(), 10000);
+}
+
+// Check for tasks that need notifications
+function checkTaskNotifications() {
+  if (!currentUser || !notificationPermission) return;
+  
+  const now = new Date();
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
+  const ud = users[currentUser];
+  (ud.routines || []).forEach((routine, ridx) => {
+    (routine.tasks || []).forEach((task, tidx) => {
+      if (task.time && task.time === currentTime && !task.done) {
+        // Check if we already notified (prevent duplicate notifications in same minute)
+        const notifyKey = `notified_${todayISO()}_${ridx}_${tidx}_${currentTime}`;
+        if (!sessionStorage.getItem(notifyKey)) {
+          showNotification(
+            `⏰ Task Reminder: ${task.name}`,
+            `Time to work on "${task.name}" from routine "${routine.name}"`,
+            ridx,
+            tidx
+          );
+          sessionStorage.setItem(notifyKey, 'true');
+          
+          // Play a subtle notification sound
+          playNotificationSound();
+        }
+      }
+    });
+  });
+}
+
+// Play notification sound
+function playNotificationSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx;
+    const now = ctx.currentTime;
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.frequency.value = 800;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.1, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+    
+    osc.start(now);
+    osc.stop(now + 0.15);
+  } catch(e) {
+    console.log('Audio notification failed:', e);
+  }
+}
+
+// Start notification checking
+function startNotificationSystem() {
+  if (notificationCheckInterval) {
+    clearInterval(notificationCheckInterval);
+  }
+  
+  // Check every 30 seconds
+  notificationCheckInterval = setInterval(checkTaskNotifications, 30000);
+  
+  // Also check immediately
+  checkTaskNotifications();
+}
+
+// Stop notification checking
+function stopNotificationSystem() {
+  if (notificationCheckInterval) {
+    clearInterval(notificationCheckInterval);
+    notificationCheckInterval = null;
+  }
+}
+
+// ---------- Sound (level up) ----------
+let audioCtx = null;
+function playLevelUp(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx; const now = ctx.currentTime;
+    const master = ctx.createGain(); master.gain.value = 0.001; master.connect(ctx.destination);
+    master.gain.setValueAtTime(0.001, now); master.gain.linearRampToValueAtTime(0.18, now+0.03); master.gain.exponentialRampToValueAtTime(0.0001, now+1.0);
+    const freqs = [440,660,880];
+    freqs.forEach((f, idx)=>{
+      const o = ctx.createOscillator(); o.type = idx===2 ? 'sawtooth' : 'triangle'; o.frequency.value = f;
+      const g = ctx.createGain(); g.gain.value = 0;
+      o.connect(g); g.connect(master);
+      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.18/(idx+1), now+0.02); g.gain.exponentialRampToValueAtTime(0.0001, now+0.8);
+      o.start(now + idx*0.02); o.stop(now + 0.9);
+    });
+  }catch(e){ /* audio may be blocked on some browsers until user interacts */ }
+}
+
+// ---------- Confetti ----------
+function fireConfetti(count=20){
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'confetti';
+    el.style.left = (Math.random()*80 + 10) + 'vw';
+    el.style.background = `hsl(${Math.random()*360} 90% 60%)`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(), 1400);
+  }
+}
+
+// ---------- Utilities ----------
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){ /* simple non-blocking micro-toast */ 
+  // small ephemeral element at top center
+  let t = document.createElement('div'); t.textContent = msg; 
+  Object.assign(t.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',top:'14px',background:'rgba(0,0,0,0.7)',padding:'8px 12px',borderRadius:'8px',zIndex:2000});
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
+}
+
+// ---------- AUTH: register / login ----------
+btnRegister.onclick = () => {
+  const u = inputUser.value.trim(); const p = inputPass.value;
+  if(!u || !p){ alert('Enter username & password'); return; }
+  if(users[u]) { alert('Username already exists'); return; }
+  users[u] = { password: p, routines: [], goals: [], history: [], xp: 0, badges: [], avatar:0, firstLogin:true, focusHistory:[], quests:[] };
+  saveAll(); alert('Registered — now login');
+};
+
+btnLogin.onclick = () => {
+  const u = inputUser.value.trim(); const p = inputPass.value;
+  if(!users[u] || users[u].password !== p){ alert('Invalid login'); return; }
+  currentUser = u;
+  modalLogin.classList.remove('show');
+  ensureUserRecord(currentUser);
+  postLoginInit();
+  renderAll();
+};
+
+// Logout
+btnLogout.onclick = ()=> {
+  if(!currentUser) { alert('No user logged in'); return; }
+  if(confirm('Logout?')) {
+    stopNotificationSystem();
+    currentUser = null;
+    // show login modal again
+    modalLogin.classList.add('show');
+    welcomeDisplay.textContent = 'Not logged';
+  }
+};
+
+// ---------- Post-login initialization ----------
+function postLoginInit(){
+  if(!currentUser) return;
+  ensureUserRecord(currentUser);
+  welcomeDisplay.textContent = currentUser;
+  
+  // Request notification permission
+  requestNotificationPermission().then(granted => {
+    if (granted) {
+      toast('✓ Notifications enabled for task reminders');
+      startNotificationSystem();
+    } else {
+      toast('Enable notifications in browser settings for task reminders');
+    }
+  });
+  
+  // first login bronze awarding
+  const ud = users[currentUser];
+  if(ud.firstLogin){
+    ud.badges = ud.badges || [];
+    if(!ud.badges.includes('Bronze')) ud.badges.push('Bronze');
+    ud.firstLogin = false;
+    saveAll();
+    showBadge('Bronze','You earned your first badge — Bronze!');
+    playLevelUp();
+    addXP(20,'First login');
+  }
+  // ensure sample quests
+  if(!ud.quests || ud.quests.length===0) {
+    ud.quests = sampleQuests().map(q=>Object.assign({},q));
+    saveAll();
+  }
+  renderAll();
+  setTimeout(()=> showDailyQuote(), 30000);
+}
+
+// ---------- Sample Quests ----------
+function sampleQuests(){
+  return [
+    { id:'q1', title:'Morning Mastery', steps:7, progress:0, rewardXP:120 },
+    { id:'q2', title:'Discipline Arc', steps:30, progress:0, rewardXP:600 },
+  ];
+}
+
+// ---------- XP & achievements ----------
+function addXP(amount, reason){
+  if(!currentUser) return;
+  users[currentUser].xp = (users[currentUser].xp||0) + amount;
+  saveAll();
+  wXP.textContent = users[currentUser].xp;
+  if(amount >= 10){ fireConfetti(12); playLevelUp(); }
+}
+
+// ---------- Routines rendering & operations ----------
+btnNewRoutine.addEventListener('click', ()=> openCreateRoutine());
+btnSaveRoutine.addEventListener('click', ()=> {
+  const name = inputRoutineName.value.trim(); if(!name) return alert('Enter routine name');
+  const desc = inputRoutineDesc.value.trim();
+  users[currentUser].routines = users[currentUser].routines || [];
+  users[currentUser].routines.push({ name, desc, tasks: [] });
+  saveAll();
+  inputRoutineName.value=''; inputRoutineDesc.value='';
+  modalCreateRoutine.classList.remove('show');
+  renderRoutinesList();
+  addXP(6,'Create routine');
+});
+btnCancelRoutine.addEventListener('click', ()=> { modalCreateRoutine.classList.remove('show'); inputRoutineName.value=''; inputRoutineDesc.value=''; });
+function openCreateRoutine(){ modalCreateRoutine.classList.add('show'); }
+
+// render routines list
+function renderRoutinesList(){
+  routinesList.innerHTML = '';
+  const ud = users[currentUser];
+  const arr = ud.routines || [];
+  if(arr.length === 0){
+    const c = document.createElement('div'); c.className='card center'; c.innerHTML = '<div class="small">No routines yet — add one</div>'; routinesList.appendChild(c); return;
+  }
+  arr.forEach((r, idx) => {
+    const card = document.createElement('div'); card.className='routine-card';
+    const left = document.createElement('div'); left.style.flex='1';
+    const t = document.createElement('div'); t.className='routine-title'; t.textContent = r.name;
+    const d = document.createElement('div'); d.className='small'; d.textContent = r.desc || '';
+    left.appendChild(t); left.appendChild(d);
+    const right = document.createElement('div');
+    const openBtn = document.createElement('button'); openBtn.className='btn primary'; openBtn.textContent='Open';
+    openBtn.onclick = ()=> openRoutineView(idx);
+    const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete';
+    delBtn.onclick = ()=> { if(confirm('Delete routine?')){ users[currentUser].routines.splice(idx,1); saveAll(); renderRoutinesList(); } };
+    right.appendChild(openBtn); right.appendChild(delBtn);
+    card.appendChild(left); card.appendChild(right);
+    routinesList.appendChild(card);
+  });
+}
+
+// open routine view (detailed)
+function openRoutineView(ridx){
+  const ud = users[currentUser];
+  const r = ud.routines[ridx];
+  if(!r) return;
+  // create a full-screen-like card inside mainArea
+  const main = document.getElementById('mainArea');
+  main.innerHTML = '';
+  const container = document.createElement('div'); container.className='card';
+  // header
+  const header = document.createElement('div'); header.className='header-row';
+  header.innerHTML = `<div><div style="font-weight:800">${escapeHtml(r.name)}</div><div class="small">${escapeHtml(r.desc||'')}</div></div>`;
+  const backWrap = document.createElement('div');
+  const backBtn = document.createElement('button'); backBtn.className='btn'; backBtn.textContent='Back';
+  backBtn.onclick = ()=> { renderAll(); };
+  backWrap.appendChild(backBtn); header.appendChild(backWrap);
+  container.appendChild(header);
+
+  // tasks
+  const tasksWrap = document.createElement('div'); tasksWrap.style.marginTop='10px';
+  r.tasks = r.tasks || [];
+  r.tasks.forEach((task, ti) => {
+    const tdiv = document.createElement('div'); tdiv.className='task-item';
+    const chk = document.createElement('input'); chk.type='checkbox'; chk.checked = !!task.done;
+    chk.onchange = ()=> { task.done = chk.checked; saveAll(); if(task.done) addXP(3,'task'); updateDayCompletion(); renderAll(); openRoutineView(ridx); };
+    const txt = document.createElement('input'); txt.className='input'; txt.value = task.name || ''; txt.onchange = (e)=> { task.name = e.target.value; saveAll(); };
+    const time = document.createElement('input'); time.type='time'; time.className='time-input'; time.value = task.time || ''; 
+    time.onchange = (e)=>{ 
+      task.time = e.target.value; 
+      saveAll(); 
+      toast('⏰ Notification set for ' + task.time);
+      // Restart notification system to pick up new time
+      if (notificationPermission) {
+        checkTaskNotifications();
+      }
+    };
+    const focusBtn = document.createElement('button'); focusBtn.className='btn'; focusBtn.textContent='Focus'; focusBtn.onclick = ()=> { // set timer and switch to focus view
+      settings.currentTask = { routineIdx: ridx, taskIdx: ti };
+      switchToView('focus');
+      toast('Focus set: ' + (task.name || 'Task'));
+    };
+    tdiv.appendChild(chk); tdiv.appendChild(txt); tdiv.appendChild(time); tdiv.appendChild(focusBtn);
+    tasksWrap.appendChild(tdiv);
+
+    // subtasks
+    const subWrap = document.createElement('div'); subWrap.style.marginLeft='18px';
+    task.subtasks = task.subtasks || [];
+    task.subtasks.forEach((s, si) => {
+      const sdiv = document.createElement('div'); sdiv.className='subtask-item';
+      const sChk = document.createElement('input'); sChk.type='checkbox'; sChk.checked = !!s.done;
+      sChk.onchange = ()=> { s.done = sChk.checked; saveAll(); if(s.done) addXP(1,'subtask'); updateDayCompletion(); renderAll(); openRoutineView(ridx); };
+      const sTxt = document.createElement('input'); sTxt.className='input'; sTxt.value = s.name || '';
+      sTxt.onchange = (e)=> { s.name = e.target.value; saveAll(); };
+      const del = document.createElement('button'); del.className='btn'; del.textContent='×'; del.style.width='36px'; del.onclick = ()=> { if(confirm('Delete subtask?')) { task.subtasks.splice(si,1); saveAll(); openRoutineView(ridx); } };
+      sdiv.appendChild(sChk); sdiv.appendChild(sTxt); sdiv.appendChild(del);
+      subWrap.appendChild(sdiv);
+    });
+    const addSubBtn = document.createElement('button'); addSubBtn.className='btn'; addSubBtn.textContent='+ Subtask';
+    addSubBtn.onclick = ()=> { task.subtasks.push({ name:'New Subtask', done:false }); saveAll(); openRoutineView(ridx); };
+    subWrap.appendChild(addSubBtn);
+    tasksWrap.appendChild(subWrap);
+  });
+
+  // add task
+  const addTaskBtn = document.createElement('button'); addTaskBtn.className='btn primary'; addTaskBtn.textContent='+ Add Task';
+  addTaskBtn.onclick = ()=> { r.tasks.push({ name:'New Task', time:'', done:false, subtasks:[] }); saveAll(); openRoutineView(ridx); };
+  container.appendChild(tasksWrap);
+  container.appendChild(addTaskBtn);
+
+  // bottom actions
+  const actions = document.createElement('div'); actions.style.marginTop='12px'; actions.style.display='flex'; actions.style.gap='8px';
+  const exportBtn = document.createElement('button'); exportBtn.className='btn'; exportBtn.textContent='Export Routine'; exportBtn.onclick = ()=> exportRoutine(ridx);
+  const deleteBtn = document.createElement('button'); deleteBtn.className='btn'; deleteBtn.textContent='Delete Routine'; deleteBtn.onclick = ()=> { if(confirm('Delete this routine?')){ users[currentUser].routines.splice(ridx,1); saveAll(); renderAll(); } };
+  actions.appendChild(exportBtn); actions.appendChild(deleteBtn);
+  container.appendChild(actions);
+
+  main.appendChild(container);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function exportRoutine(ridx){
+  const r = users[currentUser].routines[ridx];
+  const blob = new Blob([JSON.stringify(r, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${currentUser}_routine_${ridx+1}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+// ---------- Day completion, success, streak, badges ----------
+function updateDayCompletion(){
+  const ud = users[currentUser];
+  let total = 0, done = 0;
+  (ud.routines || []).forEach(r => r.tasks?.forEach(t => {
+    total++; if(t.done) done++;
+    (t.subtasks || []).forEach(s => { total++; if(s.done) done++; });
+  }));
+  if(total>0 && total === done){
+    const d = todayISO();
+    if(!ud.history.includes(d)){ ud.history.push(d); saveAll(); addXP(20,'Full completion'); }
+  }
+  calcSuccess(); calcStreakAndBadges();
+}
+
+function calcSuccess(){
+  const ud = users[currentUser];
+  let total = 0, done = 0;
+  (ud.routines || []).forEach(r => r.tasks?.forEach(t => {
+    total++; if(t.done) done++;
+    (t.subtasks || []).forEach(s => { total++; if(s.done) done++; });
+  }));
+  const pct = total ? Math.round((done/total)*100) : 0;
+  wSuccess.textContent = pct + '%';
+  return pct;
+}
+function calcStreakValue(){
+  const ud = users[currentUser];
+  const days = (ud.history || []).slice();
+  let streak = 0; let d = new Date();
+  for(;;){
+    const iso = d.toISOString().slice(0,10);
+    if(days.includes(iso)){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  return streak;
+}
+function calcStreakAndBadges(){
+  const ud = users[currentUser];
+  const streak = calcStreakValue();
+  wStreak.textContent = streak;
+  pfStreak.textContent = 'Streak: ' + streak;
+  // award silver/gold
+  if(streak >= 10 && !ud.badges.includes('Silver')){ ud.badges.push('Silver'); saveAll(); showBadge('Silver','10-day streak — Silver badge awarded!'); addXP(50,'10-day streak'); }
+  if(streak >= 30 && !ud.badges.includes('Gold')){ ud.badges.push('Gold'); saveAll(); showBadge('Gold','30-day streak — Gold badge awarded!'); addXP(150,'30-day streak'); }
+  renderProfilePanel();
+}
+
+// ---------- Focus / Pomodoro ----------
+let focusState = { 
+  running: false, 
+  paused: false,
+  seconds: 25*60, 
+  remaining: 25*60, 
+  interval: null,
+  taskName: ''
+};
+
+// Start new focus session
+focusStartNew.addEventListener('click', ()=> {
+  const taskName = focusTaskNameInput.value.trim();
+  const duration = parseInt(focusDurationInput.value) || 25;
+  
+  if (!taskName) {
+    alert('Please enter a task name');
+    return;
+  }
+  
+  if (duration < 1 || duration > 180) {
+    alert('Duration must be between 1 and 180 minutes');
+    return;
+  }
+  
+  // Initialize focus session
+  focusState.taskName = taskName;
+  focusState.seconds = duration * 60;
+  focusState.remaining = duration * 60;
+  focusState.running = true;
+  focusState.paused = false;
+  
+  // Show overlay
+  focusOverlay.classList.add('active');
+  overlayTaskName.textContent = taskName;
+  
+  // Start countdown
+  startFocusCountdown();
+});
+
+function startFocusCountdown() {
+  if (focusState.interval) {
+    clearInterval(focusState.interval);
+  }
+  
+  updateOverlayUI();
+  
+  focusState.interval = setInterval(() => {
+    if (focusState.remaining <= 0) {
+      completeFocusSession();
+      return;
+    }
+    focusState.remaining--;
+    updateOverlayUI();
+  }, 1000);
+}
+
+function updateOverlayUI() {
+  const mm = String(Math.floor(focusState.remaining / 60)).padStart(2, '0');
+  const ss = String(focusState.remaining % 60).padStart(2, '0');
+  overlayTime.textContent = mm + ':' + ss;
+  
+  const total = focusState.seconds || 1;
+  const perc = ((total - focusState.remaining) / total) * 360;
+  overlayRing.style.background = `conic-gradient(var(--accent1) ${perc}deg, rgba(255,255,255,0.08) ${perc}deg)`;
+}
+
+overlayPause.addEventListener('click', () => {
+  if (focusState.paused) {
+    // Resume
+    focusState.paused = false;
+    overlayPause.textContent = 'Pause';
+    startFocusCountdown();
+  } else {
+    // Pause
+    focusState.paused = true;
+    overlayPause.textContent = 'Resume';
+    if (focusState.interval) {
+      clearInterval(focusState.interval);
+    }
+  }
+});
+
+overlayStop.addEventListener('click', () => {
+  if (confirm('End this focus session?')) {
+    stopFocusSession(false);
+  }
+});
+
+function stopFocusSession(completed = false) {
+  if (focusState.interval) {
+    clearInterval(focusState.interval);
+  }
+  
+  focusOverlay.classList.remove('active');
+  focusState.running = false;
+  focusState.paused = false;
+  overlayPause.textContent = 'Pause';
+  
+  if (!completed) {
+    // Partial completion - give partial XP
+    const minutesCompleted = Math.floor((focusState.seconds - focusState.remaining) / 60);
+    if (minutesCompleted > 0) {
+      users[currentUser].focusHistory = users[currentUser].focusHistory || [];
+      users[currentUser].focusHistory.push({ date: todayISO(), minutes: minutesCompleted });
+      saveAll();
+      addXP(Math.max(1, Math.floor(minutesCompleted / 5)), 'Partial focus session');
+      renderTodayFocus();
+      toast(`Focus session ended - ${minutesCompleted} minutes completed`);
+    }
+  }
+  
+  // Reset inputs
+  focusTaskNameInput.value = '';
+  focusDurationInput.value = '25';
+}
+
+function completeFocusSession() {
+  if (focusState.interval) {
+    clearInterval(focusState.interval);
+  }
+  
+  // Log focus
+  const minutes = Math.round(focusState.seconds / 60);
+  users[currentUser].focusHistory = users[currentUser].focusHistory || [];
+  users[currentUser].focusHistory.push({ date: todayISO(), minutes });
+  saveAll();
+  
+  addXP(10, 'Focus session');
+  fireConfetti(18);
+  playLevelUp();
+  
+  toast(`🎉 Focus session completed! +${minutes} minutes`);
+  
+  stopFocusSession(true);
+  renderTodayFocus();
+}
+
+// Old focus timer functions (keeping for compatibility but not used)
+function updateFocusUI(){
+  const mm = String(Math.floor(focusState.remaining/60)).padStart(2,'0');
+  const ss = String(focusState.remaining%60).padStart(2,'0');
+  if(document.getElementById('focusLabel')) {
+    document.getElementById('focusLabel').textContent = mm + ':' + ss;
+  }
+  const total = focusState.seconds || 1;
+  const perc = ((total - focusState.remaining)/total) * 360;
+  if(document.getElementById('focusCircle')) {
+    document.getElementById('focusCircle').style.background = `conic-gradient(rgba(106,17,203,0.95) ${perc}deg, rgba(255,255,255,0.04) ${perc}deg)`;
+  }
+}
+
+function completeFocus(){
+  // Legacy function
+  const minutes = Math.round(focusState.seconds/60);
+  users[currentUser].focusHistory = users[currentUser].focusHistory || [];
+  users[currentUser].focusHistory.push({ date: todayISO(), minutes });
+  saveAll();
+  addXP(10,'Focus session');
+  fireConfetti(18); playLevelUp();
+  focusState.remaining = focusState.seconds; 
+  if(updateFocusUI) updateFocusUI();
+  renderTodayFocus();
+}
+function renderTodayFocus(){
+  const ud = users[currentUser];
+  const today = todayISO();
+  const mins = (ud.focusHistory || []).filter(f => f.date === today).reduce((s,i)=>s+i.minutes, 0);
+  todayFocusEl.textContent = mins + ' min';
+}
+
+// ---------- Heatmap & Productivity (3.2,3.4) ----------
+function renderHeatmap(){
+  heatmapEl.innerHTML = '';
+  const ud = users[currentUser];
+  const hist = ud.history || [];
+  const frag = document.createDocumentFragment();
+  for(let i=29;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const iso = d.toISOString().slice(0,10);
+    const cell = document.createElement('div'); cell.className = 'heatcell';
+    const inner = document.createElement('div'); inner.className='heatinner';
+    // statuses: none, partial, done (we use history membership only)
+    if(hist.includes(iso)) inner.style.background = '#45c36b'; else inner.style.background = 'rgba(255,255,255,0.04)';
+    cell.appendChild(inner); frag.appendChild(cell);
+  }
+  heatmapEl.appendChild(frag);
+}
+function computeProductivity(){
+  const ud = users[currentUser];
+  const success = calcSuccess();
+  const streak = calcStreakValue();
+  const avgFocus = avgFocusMinutes(7);
+  const score = Math.round(Math.min(100, success*0.45 + Math.min(30, streak*2) + Math.min(30, avgFocus)));
+  prodScoreEl.textContent = score;
+  prodRankEl.textContent = 'Rank: ' + (score>=90?'SS':score>=80?'S':score>=70?'A':score>=55?'B':score>=40?'C':'D');
+}
+
+// average focus minutes over n days
+function avgFocusMinutes(n=7){
+  const ud = users[currentUser];
+  const cut = new Date(); cut.setDate(cut.getDate()-n);
+  const total = (ud.focusHistory || []).filter(f => new Date(f.date) >= cut).reduce((s,i)=>s+i.minutes,0);
+  return Math.round(total / n);
+}
+
+// ---------- Quests ----------
+function renderQuests(){
+  const ud = users[currentUser];
+  const qwrap = document.getElementById('suggestedList'); // reuse container for quests in this simplified build
+  qwrap.innerHTML = '';
+  (ud.quests || []).forEach((q, idx) => {
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${escapeHtml(q.title)}</div><div class="small">${q.progress}/${q.steps}</div></div></div>`;
+    const btn = document.createElement('button'); btn.className='btn'; btn.style.marginTop='8px'; btn.textContent='Advance';
+    btn.onclick = ()=> {
+      q.progress = Math.min(q.steps, (q.progress||0) + 1);
+      if(q.progress === q.steps){
+        users[currentUser].xp = (users[currentUser].xp||0) + (q.rewardXP||100);
+        users[currentUser].badges = users[currentUser].badges || [];
+        users[currentUser].badges.push('Quest: '+q.title);
+        saveAll(); fireConfetti(20); playLevelUp(); toast('Quest complete — reward XP!');
+      }
+      saveAll(); renderQuests(); renderAll();
+    };
+    card.appendChild(btn);
+    qwrap.appendChild(card);
+  });
+}
+
+// ---------- Profile & Leaderboard ----------
+function renderProfilePanel(){
+  if(!currentUser) return;
+  const ud = users[currentUser];
+  pfName.textContent = currentUser;
+  pfStreak.textContent = 'Streak: ' + calcStreakValue();
+  pfSuccess.textContent = 'Success: ' + calcSuccess() + '%';
+  pfBadges.textContent = 'Badges: ' + (ud.badges && ud.badges.length ? ud.badges.join(', ') : 'None');
+  pfAvatar.src = avatarData[ud.avatar || 0];
+  avatarSelect.value = ud.avatar || 0;
+}
+avatarSelect.onchange = ()=> { users[currentUser].avatar = Number(avatarSelect.value); saveAll(); renderProfilePanel(); }
+
+function renderLeaderboard(){
+  lbList.innerHTML = '';
+  const demo = [
+    { name:'Ava', xp:420, streak:12 },
+    { name:'Liam', xp:350, streak:9 },
+    { name:'Noah', xp:280, streak:7 }
+  ];
+  if(currentUser){
+    demo.push({ name: currentUser, xp: users[currentUser].xp||0, streak: calcStreakValue() });
+  }
+  demo.sort((a,b)=>b.xp - a.xp);
+  demo.forEach((u, i) => {
+    const item = document.createElement('div'); item.style.padding='8px'; item.style.borderBottom='1px solid rgba(255,255,255,0.04)';
+    item.innerHTML = `<div style="font-weight:700">${i+1}. ${escapeHtml(u.name)}</div><div class="small">XP ${u.xp} • ${u.streak}d</div>`;
+    lbList.appendChild(item);
+  });
+}
+
+// ---------- Badge modal ----------
+function showBadge(type, message){
+  badgeText.textContent = message;
+  badgeEmoji.textContent = (type==='Bronze'?'🥉': type==='Silver'?'🥈': type==='Gold'?'🥇':'🏅');
+  modalBadge.classList.add('show');
+  playLevelUp(); fireConfetti(16);
+}
+btnCloseBadge.onclick = ()=> modalBadge.classList.remove('show');
+
+// ---------- Export & Reset ----------
+btnExport.onclick = ()=> {
+  if(!currentUser) return alert('Not logged in');
+  const data = JSON.stringify(users[currentUser], null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${currentUser}_ascend_export.json`; document.body.appendChild(a); a.click(); a.remove();
+};
+btnReset.onclick = ()=> {
+  if(!currentUser) return;
+  if(!confirm('Reset your account data? This will keep your username & password.')) return;
+  const pwd = users[currentUser].password;
+  users[currentUser] = { password: pwd, routines: [], goals: [], history: [], xp:0, badges:[], avatar:0, firstLogin:false, focusHistory:[], quests:[] };
+  saveAll(); renderAll(); alert('Reset complete');
+};
+
+// ---------- Suggested habits (quick add) ----------
+function renderSuggested(){
+  const container = document.getElementById('suggestedList'); container.innerHTML = ''; // hidden container reused
+  const suggestions = [
+    {title:'Morning Meditation', cat:'Mind'},
+    {title:'Drink Water (300ml)', cat:'Health'},
+    {title:'Read 15 min', cat:'Learning'},
+    {title:'Stretch 5 min', cat:'Fitness'}
+  ];
+  suggestions.forEach(s=>{
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:800">${s.title}</div><div class="small">${s.cat}</div></div></div>`;
+    const b = document.createElement('button'); b.className='btn primary'; b.style.marginTop='8px'; b.textContent='Add';
+    b.onclick = ()=> {
+      if(!users[currentUser].routines || users[currentUser].routines.length===0) users[currentUser].routines.push({ name:'Suggested', desc:'', tasks:[] });
+      users[currentUser].routines[0].tasks.push({ name:s.title, time:'', done:false, subtasks:[] });
+      saveAll(); renderRoutinesList(); addXP(4,'Suggested habit added'); alert('Added: ' + s.title);
+    };
+    c.appendChild(b); container.appendChild(c);
+  });
+}
+
+// ---------- Navigation ----------
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    navItems.forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    const view = item.dataset.view;
+    // show/hide panels
+    viewHome.style.display = 'none';
+    viewFocus.classList.add('hidden');
+    viewProgress.classList.add('hidden');
+    profilePanel.classList.add('hidden');
+    lb.classList.add('hidden');
+
+    if(view === 'home' || view === 'routines') { viewHome.style.display = 'block'; }
+    if(view === 'focus'){ viewFocus.classList.remove('hidden'); }
+    if(view === 'progress'){ viewProgress.classList.remove('hidden'); renderHeatmap(); computeProductivity(); }
+    if(view === 'profile'){ profilePanel.classList.toggle('hidden'); renderProfilePanel(); }
+  });
+});
+
+// ---------- Quick FAB (quick goal) ----------
+fab.addEventListener('click', ()=> {
+  if(!currentUser) return alert('Login first');
+  const g = prompt('Quick goal (short):'); if(!g) return;
+  users[currentUser].goals = users[currentUser].goals || []; users[currentUser].goals.push({ text:g, type:'quick', created: new Date().toISOString() });
+  saveAll(); addXP(5,'Quick goal'); toast('Quick goal added');
+});
+
+// ---------- Daily Quote ----------
+const dailyQuotes = ["Small steps every day lead to big changes.","Consistency is a quiet form of courage.","Progress, not perfection.","Earn your tomorrow in today's choices."];
+function showDailyQuote(){ toast(dailyQuotes[Math.floor(Math.random()*dailyQuotes.length)]); }
+
+// ---------- Helper: escape html ----------
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Render everything ----------
+function renderAll(){
+  if(!currentUser) return;
+  renderRoutinesList();
+  renderProfilePanel();
+  renderLeaderboard();
+  renderSuggested();
+  renderGoalsList();
+  renderHeatmap();
+  computeProductivity();
+  renderTodayFocus();
+  calcSuccess();
+  calcStreakAndBadges();
+  // widgets
+  wXP.textContent = users[currentUser].xp || 0;
+  wSuccess.textContent = calcSuccess() + '%';
+  wStreak.textContent = calcStreakValue();
+}
+
+// goals list rendering (simple)
+function renderGoalsList(){
+  const target = document.getElementById('goalList'); if(!target) return;
+  target.innerHTML = '';
+  const arr = users[currentUser].goals || [];
+  arr.forEach(g => {
+    const c = document.createElement('div'); c.className='card'; c.innerHTML = `<div style="font-weight:700">${escapeHtml(g.text)}</div><div class="small">${g.type||''}</div>`;
+    target.appendChild(c);
+  });
+}
+
+// ---------- Utilities used by UI actions (exposed for debug) ----------
+window.ascend = { users, saveAll };
+
+// ---------- Small helpers for page convenience ----------
+function switchToView(view){ 
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); 
+  document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active'); 
+  // trigger click action
+  document.querySelector(`.nav-item[data-view="${view}"]`)?.click();
+}
+
+// ---------- Simple "AI" helpers (rule-based) ----------
+function aiHabitCoach(){
+  const suggestions = [];
+  (users[currentUser].routines || []).forEach((r, ri) => {
+    (r.tasks || []).forEach((t, ti) => {
+      const rating = habitRating(ri, ti);
+      if(rating <= 2) suggestions.push({task:t.name, advice:'Break into smaller subtasks or set a focus session.'});
+    });
+  });
+  return suggestions;
+}
+function habitRating(ridx, tidx){
+  const ud = users[currentUser];
+  const t = ud.routines[ridx].tasks[tidx];
+  let score = t.done?1:0;
+  const subs = t.subtasks || [];
+  if(subs.length) {
+    const sdone = subs.filter(s=>s.done).length;
+    score += (sdone / subs.length);
+    score = Math.min(score, 2);
+  }
+  return Math.round((score/2) * 5);
+}
+
+// ---------- Initialization ----------
+(function init() {
+  // if no users exist, create demo user
+  if(Object.keys(users).length === 0) {
+    users['demo'] = { password:'demo', routines:[], goals:[], history:[], xp:120, badges:[], avatar:0, firstLogin:true, focusHistory:[], quests:[] };
+    saveAll();
+  }
+  // If only one user, prefill login username
+  const keys = Object.keys(users);
+  if(keys.length === 1) inputUser.value = keys[0];
+  // if we want auto-login the first user for demo convenience, we could, but we'll require explicit login
+  // bind export & reset buttons already hooked
+  // ensure modals closed
+  modalCreateRoutine.classList.remove('show');
+  modalBadge.classList.remove('show');
+})();
+
+// ---------- Save on unload ----------
+window.addEventListener('beforeunload', ()=> {
+  saveAll();
+  stopNotificationSystem();
+});
+
+// ---------- Keyboard enter to login convenience ----------
+inputPass.addEventListener('keyup', (e)=> { if(e.key === 'Enter') btnLogin.click(); });
+
+</script>
+</body>
+</html>
